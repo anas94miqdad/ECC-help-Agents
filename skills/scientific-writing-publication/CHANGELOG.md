@@ -1,0 +1,54 @@
+# Changelog
+
+## 2.0 (2026-09)
+
+Rebuilt from the v1.0 design specification into an executable skill.
+
+### Structure
+
+- Single 1,800-line specification split into `SKILL.md` (core rules, modes,
+  gates) plus `references/` loaded on demand (progressive disclosure).
+- YAML frontmatter with trigger-oriented `description`.
+- Consistent RFC 2119 wording (MUST / SHOULD / MAY).
+- Persistent workspace files (`references/templates/`) instead of in-context objects.
+- Deterministic checks moved into standard-library Python scripts:
+  `verify_references.py`, `check_citations.py`, `manuscript_checks.py`.
+- Integrity eval set (`evals/evals.json`, 10 trap cases).
+
+### Scientific content
+
+- Evidence model split into three axes: verification, appraisal (risk of bias
+  with named tools, GRADE-style certainty), and support; abstract-only reading caps
+  support at PARTIAL; `source_locator` and `access_level` added to the ledger.
+- Mandatory counter-evidence search for central claims; PRISMA-S-style search log.
+- Source preference by evidence need instead of a fixed hierarchy.
+- New claim class `DERIVED` for recomputable values and proposed limitations.
+- Reporting guidelines updated with versions (CONSORT 2025, SPIRIT 2025,
+  TRIPOD+AI, TRIPOD-LLM, STARD-AI, CLAIM 2024, CHART, PRISMA family, ARRIVE 2.0,
+  CHEERS 2022, SRQR/COREQ, SQUIRE 2.0, GRRAS, ...) and EQUATOR as canonical source.
+- Statistics: protocol/SAP deviations, outcome switching, clustered data,
+  paired model comparison, calibration, decision-curve analysis, fairness.
+- Imaging AI: Metrics Reloaded, empty-mask handling, per-case reporting, overclaim table.
+- Spin check for abstract, discussion, conclusion, title.
+- Systematic reviews: protocol registration and a second human reviewer required.
+
+### Ethics and responsibility
+
+- AI is not an author (ICMJE/COPE); role renamed from "co-author" to assistant.
+- Data protection (GDPR/DSGVO): de-identification check and stop condition.
+- Documented consent for case reports; registration checks.
+- Continuous AI-use log feeding the AI disclosure; AI-generated image policies.
+- Publication ethics: duplicate publication, text recycling, preprints, image
+  integrity, citation manipulation.
+- Journal legitimacy check (indexing, DOAJ, COPE, warning signs, funder OA rules).
+- Human author confirmation at gates 1, 7 and 12.
+
+### Workflow
+
+- New modes: C Targeted edit, D Response to reviewers (formalized), E Journal selection.
+- Depth profiles Lite / Standard / Full.
+- Twelve gates including data protection and reporting guideline.
+- Fallbacks: sister journals when fewer than 3 exemplars; journal-agnostic drafting.
+- Verification provenance: tool, date, and what could not be checked.
+- Fetched content treated as data, not instructions (prompt-injection guard).
+- Reviewer simulation in isolated contexts with an explicit limitation statement.

@@ -1,0 +1,30 @@
+# Journal profile. Every requirement: value + source_url + retrieved (YYYY-MM-DD).
+# Unretrievable requirement -> status: UNVERIFIED. Never fill from memory.
+journal_name:
+publisher:
+journal_url:
+legitimacy_check: {indexing: , doaj_if_oa: , cope_member: , warning_signs: , checked: }
+article_type:                 {value: , source_url: , retrieved: }
+scope_fit_evidence:           {value: , source_url: , retrieved: }
+word_limit_main_text:         {value: , source_url: , retrieved: }
+abstract_type_and_headings:   {value: , source_url: , retrieved: }
+abstract_word_limit:          {value: , source_url: , retrieved: }
+keywords_min_max:             {value: , source_url: , retrieved: }
+main_text_structure:          {value: , source_url: , retrieved: }
+reference_style_and_limit:    {value: , source_url: , retrieved: }
+figure_table_limits:          {value: , source_url: , retrieved: }
+supplementary_policy:         {value: , source_url: , retrieved: }
+title_page_requirements:      {value: , source_url: , retrieved: }
+review_model:                 {value: , source_url: , retrieved: }   # single / double blind / open
+ethics_consent_requirements:  {value: , source_url: , retrieved: }
+trial_registration:           {value: , source_url: , retrieved: }
+data_availability_policy:     {value: , source_url: , retrieved: }
+code_availability_policy:     {value: , source_url: , retrieved: }
+funding_coi_statements:       {value: , source_url: , retrieved: }
+author_contributions_credit:  {value: , source_url: , retrieved: }
+ai_policy_text_and_images:    {value: , source_url: , retrieved: }
+reporting_guideline_required: {value: , source_url: , retrieved: }
+preprint_policy:              {value: , source_url: , retrieved: }
+open_access_and_apc:          {value: , source_url: , retrieved: }
+graphical_abstract_highlights: {value: , source_url: , retrieved: }
+cover_letter_requirements:    {value: , source_url: , retrieved: }

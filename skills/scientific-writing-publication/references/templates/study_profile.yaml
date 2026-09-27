@@ -1,0 +1,31 @@
+# Study profile. Every value needs a source (file name, page/section) or "MISSING".
+# Do not ask again for values already present in supplied material.
+research_question:        {value: , source: }
+primary_objective:        {value: , source: }
+secondary_objectives:     {value: , source: }
+hypothesis:               {value: , source: }
+field_subfield:           {value: , source: }
+article_type:             {value: , source: }
+study_design:             {value: , source: }
+setting_and_period:       {value: , source: }
+target_population:        {value: , source: }
+eligibility_criteria:     {value: , source: }
+sample_size:              {value: , source: }
+unit_of_analysis:         {value: , source: }   # patient / lesion / image; clustering?
+primary_endpoint:         {value: , source: }
+secondary_endpoints:      {value: , source: }
+statistical_methods:      {value: , source: }
+software_and_versions:    {value: , source: }
+data_deidentified:        {value: , source: }   # yes / no / unknown -> gate 2
+ethics_approval:          {value: , source: }   # committee + vote number
+consent:                  {value: , source: }
+registration:             {value: , source: }   # registry + ID + date
+protocol_or_sap:          {value: , source: }
+available_data_files:     []
+available_figures_tables: []
+code_repository:          {value: , source: , verified: false}
+data_availability:        {value: , source: }
+funding:                  {value: , source: }
+conflicts_of_interest:    {value: , source: }
+authors_and_contributions: {value: , source: }
+target_journal:           {value: , source: }
