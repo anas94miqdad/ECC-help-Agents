@@ -1,7 +1,11 @@
 """Offline tests for the scientific-writing-publication skill scripts. No network calls."""
 
 import importlib.util
+import json
+import sys
+import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -15,9 +19,26 @@ def load(name):
     return module
 
 
+sys.path.insert(0, str(SCRIPTS))
 verify = load('verify_references')
 cites = load('check_citations')
 checks = load('manuscript_checks')
+extract = load('extract_manuscript')
+compare = load('compare_versions')
+builder = load('build_docx')
+
+W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
+TRACKED_DOCX_BODY = (
+    '<?xml version="1.0" encoding="UTF-8"?><w:document ' + W_NS + '><w:body>'
+    '<w:p><w:r><w:t>Methods</w:t></w:r></w:p>'
+    '<w:p><w:r><w:t xml:space="preserve">We scanned </w:t></w:r>'
+    '<w:ins w:id="1" w:author="A"><w:r><w:t>120</w:t></w:r></w:ins>'
+    '<w:del w:id="2" w:author="A"><w:r><w:delText>100</w:delText></w:r></w:del>'
+    '<w:r><w:t xml:space="preserve"> patients.</w:t></w:r>'
+    '<w:r><w:fldChar w:fldCharType="begin"/></w:r>'
+    '<w:r><w:instrText>ADDIN ZOTERO_ITEM CSL_CITATION {}</w:instrText></w:r></w:p>'
+    '<w:sdt><w:sdtContent><w:p><w:r><w:t>Inside content control.</w:t></w:r></w:p></w:sdtContent></w:sdt>'
+    '</w:body></w:document>')
 
 
 class VerifyReferencesTest(unittest.TestCase):
@@ -172,6 +193,155 @@ Mean Dice was 0.87 (95% CI 0.85-0.89). Table 3 shows subgroups.
 
     def test_decimal_comma_matches(self):
         self.assertEqual(checks.abstract_numbers_missing('Dice 0,87', 'Dice 0.87'), [])
+
+
+
+class ExtractAndBuildDocxTest(unittest.TestCase):
+    MD = """# Title of the study
+
+Introduction
+
+We included 120 patients and Dice was 0.87. {>>Where is the ethics vote?<<}
+
+## Results
+
+Dice was **0.87** with [MISSING: CI].
+
+| Split | Patients |
+|---|---|
+| Test | 18 |
+
+References
+
+1. Doe J. Paper. 2020.
+"""
+
+    def test_roundtrip(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'paper.docx'
+            info = builder.build(self.MD, str(path), line_numbers=True, double_spacing=True)
+            self.assertEqual(info['comments'], 1)
+            with zipfile.ZipFile(path) as zf:
+                names = set(zf.namelist())
+                self.assertIn('word/comments.xml', names)
+                doc = zf.read('word/document.xml').decode()
+                self.assertIn('lnNumType', doc)
+                self.assertIn('w:highlight', doc)
+                self.assertIn('<dc:creator></dc:creator>', zf.read('docProps/core.xml').decode())
+            blocks, meta = extract.extract(str(path))
+            by_type = [b['type'] for b in blocks]
+            self.assertIn('table', by_type)
+            sections = {b['section'] for b in blocks}
+            self.assertTrue({'introduction', 'results', 'references'} <= sections)
+            commented = [b for b in blocks if b.get('comments')]
+            self.assertEqual(commented[0]['comments'][0]['text'], 'Where is the ethics vote?')
+            self.assertTrue(any('comment' in w for w in meta['warnings']))
+            self.assertIn('abstract', meta['standard_sections_not_detected'])
+            md = extract.render_markdown(blocks, meta)
+            self.assertIn('[P0001]', md)
+            self.assertIn('[T0001] TABLE', md)
+
+    def test_tracked_changes_fields_and_sdt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'tracked.docx'
+            with zipfile.ZipFile(path, 'w') as zf:
+                zf.writestr('word/document.xml', TRACKED_DOCX_BODY)
+            blocks, meta = extract.extract(str(path))
+            para = [b for b in blocks if 'patients' in b['text']][0]
+            self.assertEqual(para['text'], 'We scanned 120 patients.')
+            self.assertEqual(para['tracked'], {'inserted': ['120'], 'deleted': ['100']})
+            self.assertEqual(blocks[0]['type'], 'heading')
+            self.assertEqual(para['section'], 'methods')
+            self.assertTrue(any('Inside content control' in b['text'] for b in blocks))
+            joined = ' '.join(meta['warnings'])
+            self.assertIn('tracked changes', joined)
+            self.assertIn('Zotero', joined)
+
+    def test_pdf_cleaning(self):
+        pages = [f"J Test Imaging\n{i}  Line one of text segmen-\n{i + 1}  tation continues here.\n{i + 1}"
+                 for i in range(1, 4)]
+        text, info = extract.clean_pdf_pages(pages)
+        self.assertNotIn('J Test Imaging', text)
+        self.assertIn('segmentation continues', text)
+        self.assertTrue(info['stripped_line_numbers'])
+
+    def test_unsupported_format(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'x.pages'
+            path.write_text('x')
+            with self.assertRaises(RuntimeError):
+                extract.extract(str(path))
+
+    def test_german_headings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'de.md'
+            path.write_text('Zusammenfassung\n\nWir fanden 3 Fälle.\n\nMaterial und Methoden\n\nText.\n',
+                            encoding='utf-8')
+            blocks, _ = extract.extract(str(path))
+            self.assertEqual([b['section'] for b in blocks if b['type'] != 'heading'],
+                             ['abstract', 'materials and methods'])
+            path.write_text('# Zusammenfassung\n\nWir fanden 3 Fälle.\n\n# Material und Methoden\n\nText.\n',
+                            encoding='utf-8')
+            blocks, _ = extract.extract(str(path))
+            self.assertEqual([b['section'] for b in blocks if b['type'] != 'heading'],
+                             ['abstract', 'materials and methods'])
+
+
+class CompareVersionsTest(unittest.TestCase):
+    BLOCKS = [
+        {'id': 'P0001', 'type': 'heading', 'text': 'Results', 'section': 'results'},
+        {'id': 'P0002', 'type': 'paragraph', 'text': 'Dice was 0.87 in 18 patients.', 'section': 'results'},
+        {'id': 'P0003', 'type': 'paragraph', 'text': 'Background on fractures.', 'section': 'introduction'},
+        {'id': 'P0004', 'type': 'paragraph', 'text': 'Duplicate background.', 'section': 'introduction'},
+        {'id': 'P0005', 'type': 'paragraph', 'text': '1. Doe J. Paper. doi:10.1000/a1', 'section': 'references'},
+    ]
+
+    def test_pass(self):
+        md = """## Introduction
+<!-- src: P0003 -->
+Background on fractures [1].
+
+## Results
+<!-- src: P0002 -->
+Mean Dice was 0.87 (18 patients; Table 1).
+<!-- discarded: P0004 = duplicate of P0003 -->
+
+## References
+1. Doe J. Paper. doi:10.1000/a1
+"""
+        report = compare.compare(self.BLOCKS, md)
+        self.assertEqual(report['uncovered_blocks'], [])
+        self.assertEqual(report['new_numbers_without_source'], [])
+        self.assertEqual(report['original_result_numbers_missing'], [])
+        self.assertEqual(report['references']['dois_removed'], [])
+        rows = compare.traceability_rows(md)
+        self.assertEqual(rows[1][0], 'Results')
+        self.assertEqual(rows[1][2], 'P0002')
+
+    def test_detects_problems(self):
+        md = """## Results
+<!-- src: P0002 -->
+Mean Dice was 0.87; sensitivity was 0.93.
+<!-- src: NEW -->
+A new paragraph.
+<!-- discarded: P0004; P0099 = unknown -->
+"""
+        report = compare.compare(self.BLOCKS, md, data_texts=[])
+        self.assertEqual(report['uncovered_blocks'], ['P0003'])
+        self.assertEqual(report['new_numbers_without_source'], ['0.93'])
+        self.assertEqual(report['original_result_numbers_missing'], ['18'])
+        self.assertEqual(report['discarded_without_reason'], ['P0004'])
+        self.assertEqual(report['unknown_block_ids'], ['P0099'])
+        self.assertEqual(report['references']['dois_removed'], ['10.1000/a1'])
+        self.assertEqual(len(report['new_paragraphs_for_author_review']), 1)
+
+    def test_data_file_numbers_are_allowed(self):
+        md = '<!-- src: P0002, P0003 -->\nDice 0.87 in 18 patients; sensitivity 0.93.\n<!-- discarded: P0004 = dup -->'
+        report = compare.compare(self.BLOCKS, md, data_texts=['metric,value\nsensitivity,0.93'])
+        self.assertEqual(report['new_numbers_without_source'], [])
+
+    def test_labels_and_citations_are_not_numbers(self):
+        self.assertEqual(compare.numbers_in('See Figure 3 and Table 2 [4, 5]. Value 1.5.'), {'1.5'})
 
 
 if __name__ == '__main__':

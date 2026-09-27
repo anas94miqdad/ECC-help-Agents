@@ -28,6 +28,19 @@ SECTION_NAMES = [
     "funding", "supplementary material", "appendix", "keywords", "figure legends",
     "tables", "data availability", "author contributions", "conflicts of interest",
 ]
+# German (and common variant) headings mapped to canonical English names
+SECTION_ALIASES = {
+    "zusammenfassung": "abstract", "kurzfassung": "abstract", "hintergrund": "background",
+    "einleitung": "introduction", "einführung": "introduction", "methoden": "methods",
+    "methodik": "methodology", "material und methoden": "materials and methods",
+    "material and methods": "materials and methods", "data and methods": "methods",
+    "methods and materials": "materials and methods", "study design and methods": "methods", "patienten und methoden": "patients and methods",
+    "ergebnisse": "results", "diskussion": "discussion", "schlussfolgerung": "conclusion",
+    "schlussfolgerungen": "conclusions", "fazit": "conclusion", "limitationen": "limitations",
+    "limitations of the study": "limitations", "literatur": "references",
+    "literaturverzeichnis": "references", "quellen": "references", "danksagung": "acknowledgments",
+    "schlüsselwörter": "keywords", "key words": "keywords", "abbildungslegenden": "figure legends",
+}
 MAIN_TEXT = {"introduction", "background", "methods", "materials and methods",
              "patients and methods", "methodology", "results", "discussion",
              "conclusion", "conclusions", "limitations"}
@@ -52,7 +65,7 @@ def heading_name(line):
     lower = text.lower()
     if md:
         return lower if lower else None
-    return lower if lower in SECTION_NAMES else None
+    return lower if canonical(lower) in SECTION_NAMES else None
 
 
 def split_sections(text):
@@ -76,6 +89,7 @@ def split_sections(text):
 
 
 def canonical(name):
+    name = SECTION_ALIASES.get(name, name)
     for known in SECTION_NAMES:
         if name == known or name.startswith(known + " "):
             return known
@@ -126,6 +140,7 @@ def figure_table_refs(body):
 
 
 def run_checks(text, abstract_limit=None, main_limit=None):
+    text = re.sub(r"<!--.*?-->", "", text, flags=re.S)  # traceability markers
     sections = split_sections(text)
     counts = {name: words(body) for name, body in sections if name != "_preamble" or body.strip()}
     abstract = "\n".join(b for n, b in sections if n in ("abstract", "summary"))

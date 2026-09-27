@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.1 (2026-09)
+
+Mode B extended to optimize or rebuild uploaded drafts (Word/PDF) using their
+content as the basis.
+
+- `references/revision-of-existing-manuscripts.md`: extraction, content
+  inventory, structural map, 11-dimension maturity scorecard, fix classes
+  (TEXT / INFO / ANALYSIS / DESIGN), intervention levels L1 Polish to L4 Rebuild,
+  revision blueprint, rewrite rules, verification, deliverables.
+- `scripts/extract_manuscript.py`: DOCX (headings incl. headings typed as plain
+  text, lists, tables, captions, comments, tracked changes, footnotes/endnotes,
+  equations, content controls, reference-manager fields, metadata), PDF (running
+  headers/footers, page and line numbers, hyphenation, scanned-PDF detection),
+  DOC/ODT/RTF via LibreOffice, Markdown/TXT; block-ID inventory.
+- `scripts/compare_versions.py`: content-preservation check (uncovered blocks,
+  unsourced new numbers, lost results, reference changes) and traceability CSV.
+- `scripts/build_docx.py`: revised Markdown to DOCX with Word comments,
+  highlighted placeholders, double spacing, line numbers, empty author metadata.
+- German section headings recognized by all scripts.
+- `templates/revision_report.md`; four new eval cases (11-14); stop conditions
+  for unextractable uploads and requests to "complete" missing content.
+
 ## 2.0 (2026-09)
 
 Rebuilt from the v1.0 design specification into an executable skill.

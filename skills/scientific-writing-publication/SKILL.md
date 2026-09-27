@@ -1,9 +1,9 @@
 ---
 name: scientific-writing-publication
-description: Evidence-first workflow for drafting, reviewing, revising, and preparing scientific manuscripts for journal submission, with source verification, risk-of-bias appraisal, reporting-guideline compliance (EQUATOR), statistical and ML integrity checks, journal-requirement retrieval, exemplar-based journal fit, and a submission readiness report. Use when the user wants to write, audit, revise, or submit a research paper, answer peer reviewers, or check a manuscript against a target journal. Never fabricates references, data, statistics, methods, or journal requirements.
+description: Evidence-first workflow for drafting, reviewing, optimizing, restructuring, and preparing scientific manuscripts for journal submission, including rebuilding an uploaded unfinished or badly structured draft (Word/DOCX or PDF) into a journal-ready version while preserving its content, with source verification, risk-of-bias appraisal, reporting-guideline compliance (EQUATOR), statistical and ML integrity checks, journal-requirement retrieval, exemplar-based journal fit, and a submission readiness report. Use when the user wants to write, audit, improve, restructure, or submit a research paper or uploads a manuscript draft, answer peer reviewers, or check a manuscript against a target journal. Never fabricates references, data, statistics, methods, or journal requirements.
 metadata:
   origin: community
-  version: "2.0"
+  version: "2.1"
 ---
 
 # Scientific Writing & Publication
@@ -19,6 +19,8 @@ The key words MUST, MUST NOT, SHOULD, and MAY are used as in RFC 2119.
 
 - drafting a new original article, review, protocol, case report, or technical note
 - auditing or improving an existing manuscript before submission
+- optimizing or rebuilding an uploaded draft (DOCX, PDF, DOC, ODT, RTF, Markdown)
+  that is unfinished, weak, or badly structured, using its content as the basis
 - checking a manuscript against a target journal's author guidelines
 - selecting and applying a reporting guideline (CONSORT, STROBE, TRIPOD+AI, CLAIM, PRISMA, ...)
 - verifying references and claim-to-citation support
@@ -70,7 +72,7 @@ These override every stylistic, speed, or user-convenience goal.
 | Mode | Trigger | Output |
 |---|---|---|
 | A CREATE | new manuscript from study material | draft + audits + readiness report |
-| B REVIEW & IMPROVE | existing manuscript | audit report + targeted revision |
+| B OPTIMIZE & REBUILD | existing or uploaded manuscript (DOCX/PDF), unfinished or badly structured | diagnosis + scorecard, revised DOCX with comments, revision report, traceability |
 | C TARGETED EDIT | one section, abstract, title, language polish | edited text + consistency note |
 | D RESPONSE TO REVIEWERS | reviewer/editor comments supplied | point-by-point response + tracked changes list |
 | E JOURNAL SELECTION | no target journal yet | ranked shortlist with legitimacy and scope check |
@@ -101,6 +103,10 @@ manuscript-workspace/
   ai_use_log.csv              tool, version, purpose, section, date
   compliance_matrix.csv       requirement -> location -> status
   versions.md                 version history and changes
+  <name>.inventory.md/.json   Mode B: block-ID inventory of the uploaded manuscript
+  revised.md                  Mode B: revision with src/discarded markers
+  revision_report.md          Mode B: diagnosis, scorecard, changes, open items
+  traceability.csv            Mode B: revised paragraph -> original blocks
 ```
 
 For Lite depth, `missing_information.md`, `ai_use_log.csv`, and the ledger rows
@@ -127,9 +133,43 @@ before continuing.
 | 11 Compliance | journal requirements and reporting items PASS or justified N/A | `submission-package.md` |
 | 12 Submission readiness **[AUTHOR]** | no unresolved blockers; authors approve final text and disclosures | readiness report in `submission-package.md` |
 
-Mode A runs gates 1–12 in order, drafting after gate 7. Mode B starts with
-an integrity audit of the existing text (gates 2, 6–9), then runs 3–5 and 10–12.
-Mode D uses `review-and-revision.md`. Never draft results before gate 7.
+Mode A runs gates 1–12 in order, drafting after gate 7. Mode B follows
+section 4a below. Mode D uses `review-and-revision.md`. Never draft results
+before gate 7.
+
+### 4a. Mode B: optimize or rebuild an existing manuscript
+
+The uploaded manuscript is the primary content source. Its data, results,
+methods, citations, and terminology are preserved and reorganized; nothing
+factual is added without a source. Full procedure:
+`references/revision-of-existing-manuscripts.md`.
+
+1. **Extract** with `scripts/extract_manuscript.py` into a block-ID inventory
+   (`P0001`, `T0001`, ...); handle warnings (tracked changes, comments,
+   reference-manager fields, scanned PDF). Prefer DOCX over PDF.
+2. **Inventory**: classify each block by content type (aim, method, result,
+   interpretation, limitation, ...) regardless of where it sits.
+3. **Diagnose**: structural map (misplaced content), maturity scorecard (11
+   dimensions, 1–5), gap analysis against reporting guideline and journal, each
+   gap with a fix class `TEXT | INFO | ANALYSIS | DESIGN`. Gates 2, 3, 4, 6, 7
+   run here on the original.
+4. **Choose intervention level** `L1 Polish | L2 Section revision | L3 Restructure |
+   L4 Rebuild`; recommend one, authors confirm **[AUTHOR]**.
+5. **Blueprint**: new outline with source block IDs, move/merge/split/discard lists,
+   open questions. Show it before rewriting.
+6. **Rewrite** with `<!-- src: P0012 -->` markers per paragraph and
+   `<!-- discarded: ID = reason -->`; numbers unchanged; overclaims downgraded;
+   missing required items as `[MISSING: ...]`; original comments carried over as
+   Word comments `{>>...<<}`.
+7. **Verify** with `scripts/compare_versions.py` (no uncovered blocks, no
+   unsourced new numbers, no lost results) plus gates 8–10; re-score.
+8. **Deliver** `scripts/build_docx.py` output (clean DOCX, comments, highlighted
+   placeholders, optional double spacing and line numbers), revision report,
+   traceability CSV. The original file is never overwritten. For a tracked-changes
+   view, authors use Word's Review > Compare with the original.
+
+Writing cannot repair study design: DESIGN gaps are reframed as limitations or
+narrower claims and listed in the report, never hidden.
 
 ### 5. Evidence model (three independent axes)
 
@@ -162,9 +202,13 @@ record is. Deterministic checks MUST use the scripts instead of model judgement:
 |---|---|
 | `scripts/verify_references.py` | DOI/PMID lookup via Crossref and PubMed E-utilities; title/year/first-author match; retraction and correction notices |
 | `scripts/check_citations.py` | in-text citations vs. bibliography: orphans, uncited entries, duplicates, numbering order |
-| `scripts/manuscript_checks.py` | word counts per section, abstract numbers present in main text, placeholders left, hype terms, figure/table references |
+| `scripts/manuscript_checks.py` | word counts per section, abstract numbers present in main text, placeholders left, hype terms, figure/table references (English and German headings) |
+| `scripts/extract_manuscript.py` | DOCX/PDF/DOC/ODT/RTF/MD to block-ID inventory: headings, tables, captions, comments, tracked changes, footnotes, reference-manager fields, metadata warnings |
+| `scripts/compare_versions.py` | original inventory vs. revision: uncovered blocks, unsourced new numbers, lost results, removed/added references, traceability CSV |
+| `scripts/build_docx.py` | revised Markdown to DOCX with Word comments, highlighted placeholders, double spacing, line numbers, empty author metadata |
 
-Scripts use only the Python standard library. Network scripts need outbound HTTPS;
+Scripts use only the Python standard library. PDF extraction additionally needs
+`pdftotext` (poppler), `pypdf`, or `pdfplumber`; DOC/ODT/RTF need LibreOffice. Network scripts need outbound HTTPS;
 set `CROSSREF_MAILTO` to a contact address for polite Crossref use. If a script
 cannot run, say so and mark affected items `UNVERIFIED`.
 
@@ -191,6 +235,8 @@ Stop and name the exact corrective action when:
 - the manuscript depends on analyses that were not performed
 - the target journal does not accept the article type, or fails the legitimacy check
 - a systematic review is requested without a protocol or without a second human reviewer for screening and extraction
+- an uploaded manuscript cannot be extracted reliably (scanned PDF without OCR, corrupted file); ask for the source file
+- during a rebuild, the user asks to "complete" missing results, methods details, or references from general knowledge
 
 Offering to design a missing analysis is allowed; reporting it as done is not.
 
@@ -227,7 +273,31 @@ Gate 9  verify_references.py: 1 DOI title mismatch -> corrected.
 Gate 10-12  Reviewer simulation, compliance matrix, readiness report.
 ```
 
-### Example 2: Refusing to fabricate
+### Example 2: Mode B, rebuilding an uploaded draft (L3)
+
+```text
+User: [uploads Entwurf_Frakturen_v3.docx] Please turn this into a paper for
+      Journal X. It's messy.
+
+Skill:
+Mode B, Standard depth.
+1 Extract: 64 paragraphs, 3 tables, 11 author comments, EndNote fields
+  (citations will be static in the rebuilt file), 2 unaccepted tracked changes.
+  Question: accept the tracked changes?
+2-3 Diagnosis: results (Dice, HD95) inside Methods (P0018-P0021); preprocessing
+  described in Results (P0033); no explicit aim; Discussion claims clinical
+  utility. Scorecard: structure 2, methods 2, claims 2, language 3.
+  Gaps: TEXT 14, INFO 6 (ethics number, scanner model, annotator experience),
+  ANALYSIS 2 (CIs, patient-level bootstrap), DESIGN 1 (no external validation).
+4 Recommend L3 Restructure. [AUTHOR confirms]
+5 Blueprint: outline with block IDs, 9 moves, 2 merges, 3 discards (duplicates).
+6-7 Rewrite in English; compare_versions.py: 0 uncovered blocks, 0 new
+  numbers, 0 lost results; 6 [MISSING] placeholders remain.
+8 Deliver: Entwurf_Frakturen_v3_revised.docx (18 comments), revision report
+  with scorecard before/after, traceability.csv.
+```
+
+### Example 3: Refusing to fabricate
 
 ```text
 User: The reviewer wants a p-value for the comparison. Just put p < 0.05, it
@@ -242,7 +312,7 @@ Skill: I cannot report a p-value that was not computed. Options:
 Logged in missing_information.md as blocking.
 ```
 
-### Example 3: Mode C, abstract polish (Lite depth)
+### Example 4: Mode C, abstract polish (Lite depth)
 
 ```text
 User: Shorten my abstract to 250 words.
@@ -263,6 +333,7 @@ internal test set", so the wording now matches the FACT-level evidence.
 - `references/statistics-ml-checklist.md`: statistical and machine-learning integrity
 - `references/medical-imaging-ai.md`: imaging AI and segmentation specifics
 - `references/manuscript-sections.md`: section rules, spin, citation placement, consistency audits
+- `references/revision-of-existing-manuscripts.md`: Mode B procedure for uploaded drafts (extraction, diagnosis, scorecard, intervention levels, blueprint, rewrite rules, verification, deliverables)
 - `references/review-and-revision.md`: reviewer simulation, red team, response to reviewers, versioning
 - `references/submission-package.md`: compliance matrix, package, readiness report
 - `references/templates/`: workspace file templates
