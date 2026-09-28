@@ -363,6 +363,7 @@ A new paragraph.
 
     def test_labels_and_citations_are_not_numbers(self):
         self.assertEqual(compare.numbers_in('See Figure 3 and Table 2 [4, 5]. Value 1.5.'), {'1.5'})
+        self.assertEqual(compare.numbers_in('Value 1.5 {>>check: 16.66/40 = 0.4165<<}'), {'1.5'})
 
 
 if __name__ == '__main__':

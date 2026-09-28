@@ -47,6 +47,7 @@ REF_SECTIONS = {"references", "bibliography"}
 
 def numbers_in(text):
     text = re.sub(r"<!--.*?-->", " ", text, flags=re.S)
+    text = re.sub(r"\{>>.*?<<\}", " ", text, flags=re.S)   # notes to authors are not manuscript text
     text = re.sub(r"\[MISSING[^\]]*\]", " ", text)
     text = CITATION_BRACKET_RE.sub(" ", text)
     text = LABEL_NUMBER_RE.sub(" ", text)
