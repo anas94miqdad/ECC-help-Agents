@@ -465,6 +465,24 @@ def render_markdown(blocks, meta):
     return "\n".join(out) + "\n"
 
 
+def render_clean_markdown(blocks):
+    """Plain Markdown without block IDs, for manuscript_checks.py / check_citations.py."""
+    out = []
+    for b in blocks:
+        if b["type"] in ("heading", "title"):
+            out.append("#" * max(1, min(b.get("level") or 1, 6)) + " " + b["text"])
+        elif b["type"] == "table":
+            rows = [[c.replace("\n", "; ").replace("|", "/") for c in r] for r in b["rows"]]
+            if rows:
+                width = max(len(r) for r in rows)
+                rows = [r + [""] * (width - len(r)) for r in rows]
+                out.append("\n".join(["| " + " | ".join(rows[0]) + " |", "|" + "---|" * width]
+                                     + ["| " + " | ".join(r) + " |" for r in rows[1:]]))
+        elif b["type"] != "figure":
+            out.append(("- " if b["type"] == "list_item" else "") + b["text"])
+    return "\n\n".join(out) + "\n"
+
+
 def extract(path):
     ext = os.path.splitext(path)[1].lower()
     with tempfile.TemporaryDirectory() as tmp:
@@ -507,13 +525,15 @@ def main(argv=None):
                   fh, indent=2, ensure_ascii=False)
     with open(stem + ".inventory.md", "w", encoding="utf-8") as fh:
         fh.write(render_markdown(blocks, meta))
+    with open(stem + ".clean.md", "w", encoding="utf-8") as fh:
+        fh.write(render_clean_markdown(blocks))
     print(f"blocks: {meta['counts']}")
     print("structure: " + " > ".join(f"{s['section']}({s['words']})" for s in meta["structure"]))
     if meta["standard_sections_not_detected"]:
         print("standard sections not detected: " + ", ".join(meta["standard_sections_not_detected"]))
     for w in meta["warnings"]:
         print(f"WARNING: {w}")
-    print(f"written: {stem}.inventory.md, {stem}.inventory.json")
+    print(f"written: {stem}.inventory.md, {stem}.inventory.json, {stem}.clean.md")
     return 0
 
 

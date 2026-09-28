@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.1.1 (2026-09)
+
+Fixes found while revising a real manuscript with Mode B.
+
+- `compare_versions.py`: decimals at the start of a line (e.g. the median line of
+  a two-line table cell) were mistaken for numbered headings and dropped from the
+  original's number set, producing false "new number" findings.
+- `manuscript_checks.py`: figure/table captions no longer count as in-text
+  citations; captions that are never cited in the text are reported; keywords
+  inside the abstract section are not counted towards the abstract word limit.
+- `extract_manuscript.py`: additionally writes `<name>.clean.md` (no block IDs)
+  so the other checks can run on the original.
+
 ## 2.1 (2026-09)
 
 Mode B extended to optimize or rebuild uploaded drafts (Word/PDF) using their

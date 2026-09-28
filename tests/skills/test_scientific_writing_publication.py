@@ -191,6 +191,18 @@ Mean Dice was 0.87 (95% CI 0.85-0.89). Table 3 shows subgroups.
         self.assertEqual(report['abstract_numbers_not_in_main_text'], [])
         self.assertEqual(report['main_text_words'], 4)
 
+    def test_captions_are_not_citations(self):
+        refs = checks.figure_table_refs('**Table 1.** Caption\nText, see Table 2.\nTable 2. Caption\nFig. 1. Overview\n')
+        self.assertEqual(refs['table']['mentioned'], [2])
+        self.assertEqual(refs['table']['captions_not_cited'], [1])
+        self.assertEqual(refs['figure']['captions_not_cited'], [1])
+        report = checks.run_checks('## Abstract\nA 1.\n## Results\nTable 1. Caption\nText 1.\n')
+        self.assertTrue(any('never cited' in i for i in report['issues']))
+
+    def test_keywords_not_counted_in_abstract(self):
+        report = checks.run_checks('## Abstract\nOne two three.\n\n**Keywords:** a; b; c; d\n## Introduction\nText.\n')
+        self.assertEqual(report['abstract_words'], 3)
+
     def test_decimal_comma_matches(self):
         self.assertEqual(checks.abstract_numbers_missing('Dice 0,87', 'Dice 0.87'), [])
 
@@ -237,6 +249,9 @@ References
             self.assertEqual(commented[0]['comments'][0]['text'], 'Where is the ethics vote?')
             self.assertTrue(any('comment' in w for w in meta['warnings']))
             self.assertIn('abstract', meta['standard_sections_not_detected'])
+            clean = extract.render_clean_markdown(blocks)
+            self.assertNotIn('[P0', clean)
+            self.assertIn('## Results', clean)
             md = extract.render_markdown(blocks, meta)
             self.assertIn('[P0001]', md)
             self.assertIn('[T0001] TABLE', md)
@@ -339,6 +354,12 @@ A new paragraph.
         md = '<!-- src: P0002, P0003 -->\nDice 0.87 in 18 patients; sensitivity 0.93.\n<!-- discarded: P0004 = dup -->'
         report = compare.compare(self.BLOCKS, md, data_texts=['metric,value\nsensitivity,0.93'])
         self.assertEqual(report['new_numbers_without_source'], [])
+
+    def test_line_initial_decimals_are_data_not_headings(self):
+        # two-line table cells put medians at line start; they must count as numbers
+        self.assertEqual(compare.numbers_in('3.51 ± 0.71\n3.63 (3.00–4.25)'),
+                         {'3.51', '0.71', '3.63', '3', '4.25'})
+        self.assertEqual(compare.numbers_in('2.1 Data collection\nValue 1.5.'), {'1.5'})
 
     def test_labels_and_citations_are_not_numbers(self):
         self.assertEqual(compare.numbers_in('See Figure 3 and Table 2 [4, 5]. Value 1.5.'), {'1.5'})

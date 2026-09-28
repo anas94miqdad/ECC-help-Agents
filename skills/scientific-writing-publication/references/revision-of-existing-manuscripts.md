@@ -26,7 +26,9 @@ verified literature.
 python3 scripts/extract_manuscript.py manuscript.docx --out-dir manuscript-workspace/
 ```
 
-- Produces `*.inventory.md` (readable, block IDs) and `*.inventory.json`.
+- Produces `*.inventory.md` (readable, block IDs), `*.inventory.json`, and
+  `*.clean.md` (no block IDs) for running `manuscript_checks.py` and
+  `check_citations.py` on the original.
 - Prefer DOCX over PDF. PDF extraction loses tables, superscript citations, and
   some paragraph boundaries; if only a PDF is supplied, ask once for the DOCX,
   and otherwise check tables and figures manually against the PDF.

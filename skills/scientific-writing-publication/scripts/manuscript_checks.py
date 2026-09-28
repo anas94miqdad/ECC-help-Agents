@@ -119,21 +119,33 @@ def abstract_numbers_missing(abstract, body):
     return missing
 
 
+CAPTION_LINE_RE = re.compile(r"^[\s*_]*(fig(?:ure)?s?\.?|table)\s+\d+[a-z]?[\s*_]*[.:|]", re.I | re.M)
+
+
 def figure_table_refs(body):
+    """Figure/table numbers cited in running text; caption lines do not count."""
+    raw_body = body
+    body = CAPTION_LINE_RE.sub(" ", body)
     firsts = {"figure": [], "table": []}
     for kind, num in FIG_RE.findall(body):
         key = "table" if kind.lower().startswith("table") else "figure"
         n = int(num)
         if n not in firsts[key]:
             firsts[key].append(n)
+    captioned = {"figure": set(), "table": set()}
+    for m in CAPTION_LINE_RE.finditer(raw_body):
+        num = int(re.search(r"\d+", m.group(0)).group(0))
+        captioned["table" if m.group(1).lower().startswith("table") else "figure"].add(num)
     report = {}
-    for key, seq in firsts.items():
-        if not seq:
+    for key in firsts:
+        seq = firsts[key]
+        if not seq and not captioned[key]:
             continue
-        expected = list(range(1, max(seq) + 1))
+        expected = list(range(1, max(seq + sorted(captioned[key])) + 1))
         report[key] = {
             "mentioned": sorted(seq),
-            "gaps": [n for n in expected if n not in seq],
+            "gaps": [n for n in expected if n not in seq and n not in captioned[key]],
+            "captions_not_cited": sorted(captioned[key] - set(seq)),
             "first_mention_order_ok": seq == sorted(seq),
         }
     return report
@@ -144,6 +156,8 @@ def run_checks(text, abstract_limit=None, main_limit=None):
     sections = split_sections(text)
     counts = {name: words(body) for name, body in sections if name != "_preamble" or body.strip()}
     abstract = "\n".join(b for n, b in sections if n in ("abstract", "summary"))
+    # keywords typed inside the abstract section do not count towards the abstract
+    abstract = re.split(r"^[\s*_]*(key ?words|schlüsselwörter)\b", abstract, maxsplit=1, flags=re.I | re.M)[0]
     body = "\n".join(b for n, b in sections if n not in NON_BODY and n != "_preamble")
     main_words = sum(words(b) for n, b in sections if n in MAIN_TEXT)
     lower = text.lower()
@@ -176,6 +190,8 @@ def run_checks(text, abstract_limit=None, main_limit=None):
     for key, info in report["figure_table_references"].items():
         if info["gaps"]:
             issues.append(f"{key} numbers never mentioned: {info['gaps']}")
+        if info.get("captions_not_cited"):
+            issues.append(f"{key} caption(s) never cited in the text: {info['captions_not_cited']}")
         if not info["first_mention_order_ok"]:
             issues.append(f"{key}s are not first mentioned in numerical order")
     return report

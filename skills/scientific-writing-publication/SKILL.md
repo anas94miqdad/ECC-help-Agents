@@ -3,7 +3,7 @@ name: scientific-writing-publication
 description: Evidence-first workflow for drafting, reviewing, optimizing, restructuring, and preparing scientific manuscripts for journal submission, including rebuilding an uploaded unfinished or badly structured draft (Word/DOCX or PDF) into a journal-ready version while preserving its content, with source verification, risk-of-bias appraisal, reporting-guideline compliance (EQUATOR), statistical and ML integrity checks, journal-requirement retrieval, exemplar-based journal fit, and a submission readiness report. Use when the user wants to write, audit, improve, restructure, or submit a research paper or uploads a manuscript draft, answer peer reviewers, or check a manuscript against a target journal. Never fabricates references, data, statistics, methods, or journal requirements.
 metadata:
   origin: community
-  version: "2.1"
+  version: "2.1.1"
 ---
 
 # Scientific Writing & Publication
