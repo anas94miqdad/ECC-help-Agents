@@ -55,7 +55,7 @@ def numbers_in(text):
     text = re.sub(r"^\s*#+\s*\d+(\.\d+)*\.?", " ", text, flags=re.M)   # numbered headings
     # plain-text numbered headings ("2.1 Data collection"); a decimal followed by
     # anything other than a capitalized word (e.g. "3.63 (3.00-4.25)") is data
-    text = re.sub(r"^\s*\d+(\.\d+)+\.?[ \t]+(?=[A-Z][a-z])", " ", text, flags=re.M)
+    text = re.sub(r"^\s*\d+(\.\d+)+\.?[ \t]+(?=[A-Z][A-Za-z])", " ", text, flags=re.M)
     return {norm_number(t) for t in NUMBER_RE.findall(text)}
 
 
@@ -154,7 +154,7 @@ def compare(blocks, md, data_texts=()):
         "original_result_numbers_missing": lost_results,
         "references": {
             "original_entries": len(orig_refs),
-            "revised_entries": len(rev_keys),
+            "revised_entries": sum(1 for l in revised_refs.splitlines() if _norm_ref(l)),
             "dois_removed": sorted(orig_dois - rev_dois),
             "dois_added_need_verification": sorted(rev_dois - orig_dois),
             "entries_without_doi_possibly_removed": removed_no_doi[:50],

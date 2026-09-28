@@ -14,6 +14,9 @@ Fixes found while revising real manuscripts with Mode B.
 - `manuscript_checks.py`: figure/table captions no longer count as in-text
   citations; captions that are never cited in the text are reported; keywords
   inside the abstract section are not counted towards the abstract word limit.
+- `compare_versions.py`: revised reference entries are counted per line (entries
+  with identical openings, e.g. several EU regulations, were merged); numbered
+  headings starting with an acronym ("3.2. AI use cases") are recognized.
 - `compare_versions.py`: numbers inside `{>>...<<}` notes to authors are not
   treated as manuscript text.
 - `extract_manuscript.py`: additionally writes `<name>.clean.md` (no block IDs)

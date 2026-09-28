@@ -367,6 +367,7 @@ A new paragraph.
         self.assertEqual(compare.numbers_in('3.51 ± 0.71\n3.63 (3.00–4.25)'),
                          {'3.51', '0.71', '3.63', '3', '4.25'})
         self.assertEqual(compare.numbers_in('2.1 Data collection\nValue 1.5.'), {'1.5'})
+        self.assertEqual(compare.numbers_in('3.2. AI use cases\nValue 1.5.'), {'1.5'})
 
     def test_labels_and_citations_are_not_numbers(self):
         self.assertEqual(compare.numbers_in('See Figure 3 and Table 2 [4, 5]. Value 1.5.'), {'1.5'})
