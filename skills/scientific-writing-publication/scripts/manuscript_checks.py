@@ -122,9 +122,10 @@ def abstract_numbers_missing(abstract, body):
 CAPTION_LINE_RE = re.compile(r"^[\s*_]*(fig(?:ure)?s?\.?|table)\s+\d+[a-z]?[\s*_]*[.:|]", re.I | re.M)
 
 
-def figure_table_refs(body):
+def figure_table_refs(body, full_text=None):
     """Figure/table numbers cited in running text; caption lines do not count."""
-    raw_body = body
+    # captions may sit after the reference list (typical for journal submissions)
+    raw_body = full_text if full_text is not None else body
     body = CAPTION_LINE_RE.sub(" ", body)
     firsts = {"figure": [], "table": []}
     for kind, num in FIG_RE.findall(body):
@@ -170,7 +171,7 @@ def run_checks(text, abstract_limit=None, main_limit=None):
         "abstract_numbers_not_in_main_text": abstract_numbers_missing(abstract, body) if abstract else [],
         "placeholders": placeholders,
         "hype_terms": hype,
-        "figure_table_references": figure_table_refs(body),
+        "figure_table_references": figure_table_refs(body, text),
         "issues": [],
     }
     issues = report["issues"]

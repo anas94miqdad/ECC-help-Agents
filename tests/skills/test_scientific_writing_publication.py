@@ -206,6 +206,11 @@ Mean Dice was 0.87 (95% CI 0.85-0.89). Table 3 shows subgroups.
         report = checks.run_checks('## Abstract\nA 1.\n## Results\nTable 1. Caption\nText 1.\n')
         self.assertTrue(any('never cited' in i for i in report['issues']))
 
+    def test_tables_after_references_are_checked(self):
+        text = '## Abstract\nA.\n## Results\nSee Table 1.\n## References\n1. Ref.\n\nTable 1. First\n\nTable 2. Second\n'
+        report = checks.run_checks(text)
+        self.assertEqual(report['figure_table_references']['table']['captions_not_cited'], [2])
+
     def test_keywords_not_counted_in_abstract(self):
         report = checks.run_checks('## Abstract\nOne two three.\n\n**Keywords:** a; b; c; d\n## Introduction\nText.\n')
         self.assertEqual(report['abstract_words'], 3)

@@ -19,6 +19,8 @@ Fixes found while revising real manuscripts with Mode B.
   headings starting with an acronym ("3.2. AI use cases") are recognized.
 - `compare_versions.py`: numbers inside `{>>...<<}` notes to authors are not
   treated as manuscript text.
+- `manuscript_checks.py`: table/figure captions placed after the reference list
+  (common in journal submissions) are included in the "caption never cited" check.
 - `extract_manuscript.py`: additionally writes `<name>.clean.md` (no block IDs)
   so the other checks can run on the original.
 
