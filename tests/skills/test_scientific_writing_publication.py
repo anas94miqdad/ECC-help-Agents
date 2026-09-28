@@ -105,6 +105,13 @@ class VerifyReferencesTest(unittest.TestCase):
         self.assertTrue(rec['retracted'])
         self.assertIsNone(verify.parse_pubmed_summary({'9': {'error': 'x'}}, '9'))
 
+    def test_parse_handle_response(self):
+        registered = {'responseCode': 1, 'values': [
+            {'type': 'HS_ADMIN', 'data': {}},
+            {'type': 'URL', 'data': {'value': 'https://op.europa.eu/publication/x'}}]}
+        self.assertEqual(verify.parse_handle_response(registered), 'https://op.europa.eu/publication/x')
+        self.assertIsNone(verify.parse_handle_response({'responseCode': 100}))
+
     def test_invalid_doi_rejected_without_network(self):
         out = verify.verify_one({'id': '1', 'doi': 'doi:not-valid'})
         self.assertEqual(out['status'], 'REJECTED')

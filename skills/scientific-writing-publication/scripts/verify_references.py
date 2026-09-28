@@ -228,6 +228,26 @@ def crossref_lookup(doi):
     return rec
 
 
+def parse_handle_response(data):
+    """Target URL from a doi.org handle API response, or None if not registered."""
+    if not data or data.get("responseCode") != 1:
+        return None
+    for value in data.get("values", []):
+        if value.get("type") == "URL":
+            return value.get("data", {}).get("value", "")
+    return ""
+
+
+def doi_handle_target(doi):
+    """None = not registered at doi.org; "" = could not check; else the target URL."""
+    try:
+        return parse_handle_response(_get_json(f"https://doi.org/api/handles/{urllib.parse.quote(doi)}"))
+    except urllib.error.HTTPError as err:
+        return None if err.code == 404 else ""
+    except (urllib.error.URLError, TimeoutError, ValueError):
+        return ""
+
+
 def _eutils_params(extra):
     params = dict(extra, retmode="json")
     if os.environ.get("NCBI_API_KEY"):
@@ -282,9 +302,20 @@ def verify_one(ref):
             records.append(("Crossref", crossref_lookup(out["doi"])))
         except urllib.error.HTTPError as err:
             if err.code == 404:
-                out["status"] = "REJECTED"
-                out["reasons"] = "DOI not found in Crossref (may be registered with another agency, e.g. DataCite; check doi.org)"
-                return out
+                target = doi_handle_target(out["doi"])
+                if target is None:
+                    out["status"] = "REJECTED"
+                    out["reasons"] = "DOI not found in Crossref and not registered at doi.org"
+                    return out
+                if target == "":
+                    reasons.append("DOI not in Crossref; doi.org handle check not possible")
+                else:
+                    out["status"] = "PARTIALLY_VERIFIED"
+                    out["verified_with"] = "doi.org"
+                    out["reasons"] = ("DOI registered at doi.org with a non-Crossref agency (resolves to "
+                                      f"{target}); metadata not compared, check title and year on the landing page")
+                    out["retraction_or_correction"] = "notice check not possible"
+                    return out
             reasons.append(f"Crossref HTTP {err.code}")
         except (urllib.error.URLError, TimeoutError, ValueError) as err:
             reasons.append(f"Crossref unreachable: {err}")

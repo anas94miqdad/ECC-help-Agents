@@ -2,7 +2,11 @@
 
 ## 2.1.1 (2026-09)
 
-Fixes found while revising a real manuscript with Mode B.
+Fixes found while revising real manuscripts with Mode B.
+
+- `verify_references.py`: a DOI missing from Crossref is checked at the doi.org
+  handle API before rejection; DOIs of other registration agencies (e.g. the EU
+  Publications Office) are reported as PARTIALLY_VERIFIED instead of REJECTED.
 
 - `compare_versions.py`: decimals at the start of a line (e.g. the median line of
   a two-line table cell) were mistaken for numbered headings and dropped from the
